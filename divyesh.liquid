@@ -1,0 +1,226 @@
+{% comment %} gift-box-main.liquid – Custom Gift Box Builder {% endcomment %}
+
+<div class="gift-box-page">
+  <div class="page-width">
+    <h1 class="gift-box-title">{{ section.settings.title | default: "Maitri Gift Box Builder" }}</h1>
+    <p class="gift-box-subtitle">{{ section.settings.subtitle | default: "Select any variants below to create your perfect gift box!" }}</p>
+
+    <div class="gift-box-products-grid">
+      {% for product in collections.all.products %}
+        <div class="gift-box-product-card">
+          {% if product.featured_image %}
+            <img src="{{ product.featured_image | img_url: 'medium' }}" alt="{{ product.title | escape }}" loading="lazy">
+          {% endif %}
+
+          <h3 class="gift-box-product-title">{{ product.title }}</h3>
+
+          <div class="gift-box-prices">
+            <span class="price">{{ product.price | money }}</span>
+            {% if product.compare_at_price > product.price %}
+              <span class="compare-at-price">{{ product.compare_at_price | money }}</span>
+            {% endif %}
+          </div>
+
+          <div class="gift-box-variants">
+            {% for variant in product.variants %}
+              <label class="gift-box-variant-label {% unless variant.available %}sold-out{% endunless %}">
+                <input type="checkbox"
+                       class="gift-box-variant-checkbox"
+                       data-variant-id="{{ variant.id }}"
+                       data-product="{{ product.title | escape }}"
+                       data-variant="{{ variant.title }}"
+                       data-price="{{ variant.price | money }}"
+                       data-image="{% if variant.image %}{{ variant.image | img_url: 'small' }}{% else %}{{ product.featured_image | img_url: 'small' }}{% endif %}"
+                       {% unless variant.available %}disabled{% endunless %}>
+                <span>
+                  {{ variant.title }} – {{ variant.price | money }}
+                  {% unless variant.available %}<em>(Sold out)</em>{% endunless %}
+                </span>
+              </label>
+            {% endfor %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+
+    <!-- Gift Box Summary -->
+    <div class="gift-box-summary">
+      <h2>{{ section.settings.box_title | default: "Your Gift Box" }}</h2>
+      <div id="gift-box-items">
+        <p class="empty-message">No items selected yet. Check some boxes above!</p>
+      </div>
+
+      <div class="gift-box-footer">
+        <button id="gift-box-add-to-cart" class="button button--primary" disabled>
+          Add to Cart (<span id="gift-box-count">0</span> items)
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .gift-box-page { padding: 40px 0; }
+  .gift-box-title { text-align: center; margin-bottom: 12px; }
+  .gift-box-subtitle { text-align: center; margin-bottom: 40px; color: #666; }
+  .gift-box-products-grid { 
+    display: grid; 
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); 
+    gap: 24px; 
+    margin-bottom: 60px; 
+  }
+  .gift-box-product-card { 
+    border: 1px solid #e5e5e5; 
+    border-radius: 12px; 
+    padding: 20px; 
+    text-align: center; 
+    background: #fff; 
+  }
+  .gift-box-product-card img { max-width: 100%; border-radius: 8px; margin-bottom: 16px; }
+  .gift-box-product-title { margin: 0 0 12px; font-size: 1.3em; }
+  .gift-box-prices { margin-bottom: 16px; font-size: 1.1em; }
+  .compare-at-price { text-decoration: line-through; color: #999; margin-left: 8px; }
+  .gift-box-variant-label { 
+    display: flex; 
+    align-items: center; 
+    margin: 8px 0; 
+    font-size: 0.95em; 
+    cursor: pointer; 
+  }
+  .gift-box-variant-label input { margin-right: 10px; }
+  .gift-box-variant-label.sold-out { opacity: 0.5; cursor: not-allowed; }
+  .gift-box-summary { 
+    border: 2px dashed #ddd; 
+    border-radius: 12px; 
+    padding: 30px; 
+    background: #f9f9f9; 
+    text-align: center; 
+  }
+  #gift-box-items { min-height: 80px; margin: 20px 0; }
+  .gift-box-item { 
+    display: flex; 
+    align-items: center; 
+    background: white; 
+    padding: 12px; 
+    margin: 12px 0; 
+    border-radius: 8px; 
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05); 
+  }
+  .gift-box-item img { width: 60px; height: 60px; object-fit: cover; margin-right: 16px; border-radius: 6px; }
+  .gift-box-item-details { flex: 1; text-align: left; }
+  .gift-box-item-details h4 { margin: 0 0 4px; font-size: 1em; }
+  .gift-box-remove { background: #ff4444; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; }
+  #gift-box-add-to-cart:disabled { opacity: 0.5; cursor: not-allowed; }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const checkboxes = document.querySelectorAll('.gift-box-variant-checkbox');
+  const itemsContainer = document.getElementById('gift-box-items');
+  const addBtn = document.getElementById('gift-box-add-to-cart');
+  const countSpan = document.getElementById('gift-box-count');
+  let selected = [];
+
+  checkboxes.forEach(cb => {
+    cb.addEventListener('change', function () {
+      const data = {
+        id: this.dataset.variantId,
+        product: this.dataset.product,
+        variant: this.dataset.variant,
+        price: this.dataset.price,
+        image: this.dataset.image
+      };
+
+      if (this.checked) {
+        selected.push(data);
+      } else {
+        selected = selected.filter(item => item.id !== data.id);
+      }
+      render();
+    });
+  });
+
+  function render() {
+    if (selected.length === 0) {
+      itemsContainer.innerHTML = '<p class="empty-message">No items selected yet. Check some boxes above!</p>';
+      addBtn.disabled = true;
+      countSpan.textContent = '0';
+      return;
+    }
+
+    let html = '';
+    selected.forEach(item => {
+      html += `
+        <div class="gift-box-item">
+          ${item.image ? `<img src="${item.image}" alt="${item.variant}">` : ''}
+          <div class="gift-box-item-details">
+            <h4>${item.product} – ${item.variant}</h4>
+            <p>${item.price}</p>
+          </div>
+          <button class="gift-box-remove" onclick="removeItem('${item.id}')">×</button>
+        </div>`;
+    });
+    itemsContainer.innerHTML = html;
+    addBtn.disabled = false;
+    countSpan.textContent = selected.length;
+  }
+
+  window.removeItem = function(id) {
+    const cb = document.querySelector(`[data-variant-id="${id}"]`);
+    if (cb) { cb.checked = false; cb.dispatchEvent(new Event('change')); }
+  };
+
+  addBtn.addEventListener('click', function () {
+    if (selected.length === 0) return;
+
+    const items = selected.map(v => ({ id: parseInt(v.id), quantity: 1 }));
+
+    fetch('/cart/add.js', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ items })
+    })
+    .then(r => r.json())
+    .then(() => {
+      document.location.href = '/cart'; // or open cart drawer if your theme supports it
+    })
+    .catch(err => {
+      console.error(err);
+      alert('Something went wrong. Please try again.');
+    });
+  });
+});
+</script>
+
+{% schema %}
+{
+  "name": "Maitri Gift Box Builder",
+  "tag": "section",
+  "class": "gift-box-section",
+  "settings": [
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Main Heading",
+      "default": "Maitri Gift Box Builder"
+    },
+    {
+      "type": "text",
+      "id": "subtitle",
+      "label": "Subtitle",
+      "default": "Select any variants below to create your perfect gift box!"
+    },
+    {
+      "type": "text",
+      "id": "box_title",
+      "label": "Gift Box Section Title",
+      "default": "Your Gift Box"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Maitri Gift Box Builder"
+    }
+  ]
+}
+{% endschema %}
