@@ -1,6 +1,106 @@
+ <style>
+  .all-products-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+  }
+
+  .product-card {
+    border: 1px solid #e5e5e5;
+    padding: 15px;
+    border-radius: 10px;
+    text-align: center;
+  }
+
+  .product-card img {
+    width: 100%;
+    border-radius: 10px;
+  }
+
+  .product-title {
+    margin-top: 10px;
+    font-size: 18px;
+    font-weight: 600;
+  }
+
+  .product-price {
+    margin: 8px 0;
+    font-size: 16px;
+    font-weight: 500;
+    color: #333;
+  }
+
+  .product-btn {
+    display: inline-block;
+    padding: 8px 16px;
+    background: black;
+    color: white;
+    border-radius: 6px;
+    text-decoration: none;
+  }
+
+  .product-compare {
+    font-size: 15px;
+    color: #777;
+    text-decoration: line-through;
+  }
+
+</style>
+
+<div class="all-products-grid">
+
+  {% for product in collections.all.products %} 
+    <div class="product-card">
+
+      <a href="{{ product.url }}">
+        <img src="{{ product.featured_image | img_url: '400x' }}" alt="{{ product.title }}">
+      </a>
+
+      <div class="product-title">
+        {{ product.title }}
+      </div>
+
+      <div class="product-price">
+        {{ product.price | money }}
+      </div>
+      {% if product.compare_at_price > product.price %}
+        <div class="product-compare">
+          {{ product.compare_at_price | money }}
+        </div>
+      {% endif %}
+
+      <a href="{{ product.url }}" class="product-btn">
+        View Product
+      </a>
+
+    </div>
+  {% endfor %}
+
+
+
+  
+
+</div>
+
+{% schema %}
+{
+  "name": "All Products Grid",
+  "settings": [],
+  "presets": [
+    {
+      "name": "All Products Grid"
+    }
+  ]
+}
+{% endschema %} 
+
+
+
+
+
 {% comment %} gift-box-main.liquid – Custom Gift Box Builder {% endcomment %}
 
-<div class="gift-box-page">
+{% comment %} <div class="gift-box-page">
   <div class="page-width">
     <h1 class="gift-box-title">{{ section.settings.title | default: "Maitri Gift Box Builder" }}</h1>
     <p class="gift-box-subtitle">{{ section.settings.subtitle | default: "Select any variants below to create your perfect gift box!" }}</p>
@@ -194,7 +294,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 {% schema %}
 {
-  "name": "divyesh Gift Box Builder",
+  "name": "Maitri Gift Box Builder",
   "tag": "section",
   "class": "gift-box-section",
   "settings": [
@@ -202,7 +302,7 @@ document.addEventListener('DOMContentLoaded', function () {
       "type": "text",
       "id": "title",
       "label": "Main Heading",
-      "default": "divyesh Gift Box Builder"
+      "default": "Maitri Gift Box Builder"
     },
     {
       "type": "text",
@@ -219,8 +319,8 @@ document.addEventListener('DOMContentLoaded', function () {
   ],
   "presets": [
     {
-      "name": "divyesh Gift Box Builder"
+      "name": "Maitri Gift Box Builder"
     }
   ]
 }
-{% endschema %}
+{% endschema %} {% endcomment %}
